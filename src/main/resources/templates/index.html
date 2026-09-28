@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garage Management</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #343a40; }
+        .clickable-row { cursor: pointer; }
+        .clickable-row:hover { background-color: #f1f3f5; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">Garage Management System</a>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Total Garages</div>
+                    <div class="fs-3 fw-bold" th:text="${totalGarages}">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-white">
+            <h6 class="mb-0">Search Garages</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" action="/">
+                <input type="hidden" name="search" value="1"/>
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Garage Name</label>
+                        <input type="text" class="form-control form-control-sm"
+                               name="name" placeholder="e.g. AutoFix"
+                               th:value="${q_name}"/>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">City</label>
+                        <input type="text" class="form-control form-control-sm"
+                               name="city" placeholder="e.g. Los Angeles"
+                               th:value="${q_city}"/>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">State</label>
+                        <input type="text" class="form-control form-control-sm"
+                               name="state" placeholder="e.g. CA"
+                               th:value="${q_state}"/>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Service</label>
+                        <select class="form-select form-select-sm" name="serviceCode">
+                            <option value="">-- Any Service --</option>
+                            <option th:each="svc : ${services}"
+                                    th:value="${svc.serviceCode}"
+                                    th:text="${svc.serviceName}"
+                                    th:selected="${svc.serviceCode == q_serviceCode}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end gap-1">
+                        <button type="submit" class="btn btn-dark btn-sm">Search</button>
+                        <a href="/" class="btn btn-outline-secondary btn-sm">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search result banner -->
+    <div th:if="${searchMode}" class="alert alert-secondary py-2 mb-2">
+        <span th:text="|Found ${resultCount} garage(s) matching your search.|"></span>
+    </div>
+
+    <!-- Garage Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0" th:text="${searchMode} ? 'Search Results' : 'All Garages'">Garages</h5>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-bordered table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Rating</th>
+                        <th>City</th>
+                        <th>State</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${garages.empty}">
+                        <td colspan="8" class="text-center text-muted py-4">No garages found.</td>
+                    </tr>
+                    <tr class="clickable-row"
+                        th:each="g : ${garages}"
+                        th:onclick="|window.location='/garages/${g.garageId}'|">
+                        <td th:text="${g.garageCode}"></td>
+                        <td class="fw-semibold" th:text="${g.garageName}"></td>
+                        <td th:text="${g.phoneNumber}"></td>
+                        <td th:text="${g.email}"></td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${g.status?.name() == 'ACTIVE'} ? 'bg-success' : 'bg-secondary'"
+                                  th:text="${g.status?.name()}">
+                            </span>
+                        </td>
+                        <td th:text="${g.rating}"></td>
+                        <td th:text="${g.address?.city}"></td>
+                        <td th:text="${g.address?.state}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- REST API Reference -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0">REST API Endpoints (called by ClaimCenter)</h6>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Description</th>
+                        <th>Direction</th>
+                    </tr>
+                </thead>
+                <tbody class="small font-monospace">
+                    <tr>
+                        <td><span class="badge bg-success">POST</span></td>
+                        <td>/api/garage/garages/search</td>
+                        <td class="font-sans-serif">Search garages by loss location + service</td>
+                        <td><span class="badge bg-info text-dark">CC → App</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-success">POST</span></td>
+                        <td>/api/garage/repair-orders</td>
+                        <td class="font-sans-serif">Create repair order (receive vehicle)</td>
+                        <td><span class="badge bg-info text-dark">CC → App</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-success">POST</span></td>
+                        <td>/api/garage/estimates</td>
+                        <td class="font-sans-serif">Submit billing estimate</td>
+                        <td><span class="badge bg-info text-dark">CC → App</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-primary">GET</span></td>
+                        <td>/api/garage/repair-orders/{id}/status</td>
+                        <td class="font-sans-serif">Poll repair order status</td>
+                        <td><span class="badge bg-warning text-dark">CC polls App</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-warning text-dark">PUT</span></td>
+                        <td>/api/garage/repair-orders/{id}/status</td>
+                        <td class="font-sans-serif">Update repair order status</td>
+                        <td><span class="badge bg-info text-dark">CC → App</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-primary">GET</span></td>
+                        <td>/api/garage/repair-orders/claim/{claimNumber}</td>
+                        <td class="font-sans-serif">Get all repair orders for a claim</td>
+                        <td><span class="badge bg-warning text-dark">CC polls App</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-primary">GET</span></td>
+                        <td>/api/garage/estimates/claim/{claimNumber}</td>
+                        <td class="font-sans-serif">Get billing estimates for a claim</td>
+                        <td><span class="badge bg-warning text-dark">CC polls App</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
